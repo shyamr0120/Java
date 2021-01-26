@@ -1,0 +1,8 @@
+Shyam Rajendren
+N01185608
+
+Purpose: To get familiar with hashing and use the techniques to compile Assembly Language programs.
+
+The hashing is solved using Linear Probing.
+
+Instructions:Type the file Test.txt followed by Ouptut.txt when running the program.

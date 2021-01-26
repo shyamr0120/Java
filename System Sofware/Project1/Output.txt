@@ -1,0 +1,10 @@
+ERROR moss not found
+Stored moss 77 at location 5
+Stored eno 69 at location 7
+Stored geodude 11 at location 3
+eno found at location 7 with value 69
+ERROR moss already exists at location 5
+ERROR whyme not found
+Stored eleven 11 at location 4
+eleven found at location 4 with value 11
+Stored as 42 at location 8

@@ -1,0 +1,1026 @@
+import java.util.*;
+import java.io.*;
+public class Compiler
+{
+    public static Scanner s;
+    public static void main(String args[])
+    {
+        try
+        {
+            File file = new File(args[0]);
+            s = new Scanner(file);
+        }
+        catch(Exception e)
+        {
+            System.out.println("FILE NOT FOUND");
+            System.exit(1);
+        }
+        ArrayList<Token> x = new ArrayList<>();
+        Scannr.scanner(x);
+        Parser.parser(x);
+    }
+    static class Scannr
+    {
+        public static void scanner(ArrayList<Token> x)
+        {
+            int skip = 0;
+            String spec[] = {"+","-","*","/","<","<=",">",">=","==","!=",
+            "=",";",",","(",")","[","]","{","}"};
+            String spec2[] = {"+","-","*","<","<=",">",">=","==","!=","=","/"};
+            String delim[] = {";",",","(",")","[","]","{","}"};
+            String key[] = {"else","if","int","float","return","void","while"};
+            int clear = 0;
+            while(s.hasNext())
+            {
+                int exp = 0;
+                String w = "";
+                String line = s.nextLine();
+                if(line.trim().length() == 0)
+                {
+                    continue;
+                }
+                //System.out.println("INPUT: "+line);
+                line = line.trim();
+                line = line + " ";
+                for(int i = 0; i<line.length(); i++)
+                {
+                    int next = 0;
+                    char c = line.charAt(i);
+                    w = w + c;
+                    if(w.equals("/"))
+                    {
+                        String w2 = w + line.charAt(i+1);
+                        if(w2.equals("//"))
+                        {
+                            break;
+                        }
+                        if(w2.equals("/*"))
+                        {
+                            skip++;
+                            i++;
+                            w = "";
+                            continue;
+                        }
+                    }
+                    if(skip>0)
+                    {
+                        if(w.equals("*"))
+                        {
+                            String w2 = w + line.charAt(i+1);
+                            if(w2.equals("*/"))
+                            {
+                                skip--;
+                                i++;
+                                w = "";
+                                continue;
+                            }
+                        }
+                    }
+                    if(w.equals(" "))
+                    {
+                        w = "";
+                        continue;
+                    }
+                    if(skip>0)
+                    {
+                        w = "";
+                        continue;
+                    }
+                    if(c == ' ')
+                    {
+                        w = w.trim();
+                        clear = 1;
+                    }
+                    for(int j = 0; j<spec.length; j++)
+                    {
+                        int skip2 = 0;
+                        if(w.equals(spec[j]))
+                        {
+                            if(w.equals("<")||w.equals("=")||w.equals(">"))
+                            {
+                                String ww = w + line.charAt(i+1);
+                                for(int k = 0; k<spec.length; k++)
+                                {
+                                    if(ww.equals(spec[k]))
+                                    {
+                                        //System.out.println(ww);
+                                        int skip3 = 0;
+                                        for(int l = 0; l<delim.length; l++)
+                                        {
+                                            String d = delim[l];
+                                            if((String.valueOf(c)).equals(d))
+                                            {
+                                                Token data = new Token(String.valueOf(c), 1);
+                                                x.add(data);
+                                                skip3 = 1;
+                                            }
+                                        }
+                                        if(skip3 == 1)
+                                        {
+                                            break;
+                                        }
+                                        Token data = new Token(ww, 2);
+                                        x.add(data);
+                                    
+                                        i++;
+                                        skip2 = 1;
+                                        break;
+                                    }
+                                }
+                            }
+                            if(skip2 == 1)
+                            {
+                                w = "";
+                                next = 1;
+                                break;
+                            }
+                            //System.out.println(w);
+                            int skip3 = 0;
+                            for(int l = 0; l<delim.length; l++)
+                            {
+                                String d = delim[l];
+                                if((String.valueOf(c)).equals(d))
+                                {
+                                    Token data = new Token(String.valueOf(c), 1);
+                                    x.add(data);
+                                    skip3 = 1;
+                                }
+                            }
+                            if(skip3 == 0)
+                            {
+                                Token data = new Token(w, 2);
+                                x.add(data);
+                            }
+                        
+                            w = "";
+                            next = 1;
+                            break;
+                        }
+                    }
+                    for(int j = 0; j<key.length; j++)
+                    {
+                        if(w.equals(key[j]) && !Character.isDigit(line.charAt(i+1)) && !Character.isLetter(line.charAt(i+1)))
+                        {
+                            //System.out.println("KEYWORD: "+w);
+                            Token data = new Token(w, 3);
+                            x.add(data);
+                            for(int k = 0; k<delim.length; k++)
+                            {
+                                String d = delim[k];
+                                if((String.valueOf(c)).equals(d))
+                                {
+                                    data = new Token(String.valueOf(c), 1);
+                                    x.add(data);
+                                }
+                            }
+                            w = "";
+                            next = 1;
+                            break;
+                        }
+                    }
+                    for(int j = 0; j<delim.length; j++)
+                    {
+                        if(w.equals(delim[j]))
+                        {
+                            Token data = new Token(w, 1);
+                            x.add(data);
+                            w = "";
+                            next = 1;
+                            break;
+                        }
+                    }
+                    if(next == 1)
+                    {
+                        continue;
+                    }
+                    int trim = 0;
+                    String cc = Character.toString(c);
+                    String temp = ""; 
+                    if(cc.equals(".") && w.chars().allMatch(Character::isLetter)==false)
+                    {
+                        exp = 1;
+                        continue;
+                    }
+                    for(int j = 0; j<spec.length; j++)
+                    {
+                        if((cc.equals("+")||cc.equals("-")) && exp == 1)
+                        {
+                            break;
+                        }
+                        if(cc.equals(spec[j]))
+                        {
+                            for(int k = 0; k<w.length()-1; k++)
+                            {
+                                temp = temp + w.charAt(k);
+                            }
+                            trim = 1;
+                            clear = 1;
+                            break;
+                        }   
+                    }
+                    if(trim == 0)
+                    {
+                        temp = w;
+                    }
+                    if(clear == 1)
+                    {
+                        clear = 0;
+                        if(exp == 1 && temp.chars().allMatch(Character::isLetter)==false)
+                        {
+                            //System.out.println("NUM: "+temp);
+                            Token data = new Token(temp, 4);
+                            x.add(data);
+                            for(int k = 0; k<delim.length; k++)
+                            {
+                                String d = delim[k];
+                                if((String.valueOf(c)).equals(d))
+                                {
+                                    data = new Token(String.valueOf(c), 1);
+                                    x.add(data);
+                                
+                                }
+                            }
+                            exp = 0;
+                            w = "";
+                            continue;
+                        }
+                        try
+                        {
+                            Integer.parseInt(temp);
+                            //System.out.println("NUM: "+temp);
+                            Token data = new Token(temp, 4);
+                            x.add(data);
+                            for(int k = 0; k<delim.length; k++)
+                            {
+                                String d = delim[k];
+                                if((String.valueOf(c)).equals(d))
+                                {
+                                    data = new Token(String.valueOf(c), 1);
+                                    x.add(data);
+                                }
+                            }
+                            w = "";
+                        }
+                        catch(Exception e)
+                        {
+                            boolean check = temp.chars().allMatch(Character::isLetter);
+                            if(check == true)
+                            {
+                                //System.out.println("ID: "+temp);
+                                Token data = new Token(temp, 5);
+                                x.add(data);
+                                for(int k = 0; k<delim.length; k++)
+                                {
+                                    String d = delim[k];
+                                    if((String.valueOf(c)).equals(d))
+                                    {
+                                        data = new Token(String.valueOf(c), 1);
+                                        x.add(data);
+                                    }
+                                }
+                                for(int k = 0; k<spec2.length; k++)
+                                {
+                                    String d = spec2[k];
+                                    if((String.valueOf(c)).equals(d))
+                                    {
+                                        char f = line.charAt(i+1);
+                                        if(f == '=' || f == '>' || f== '<')
+                                        {
+                                            data = new Token(String.valueOf(c)+f, 2);
+                                            x.add(data);
+                                            i++;
+                                            break;
+                                        }
+                                        data = new Token(String.valueOf(c), 2);
+                                        x.add(data);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                String t = "";
+                                String y = "";
+                                for(int j = 0; j<temp.length(); j++)
+                                {
+                                    t = "";
+                                    t = t + temp.charAt(j);
+                                    check = t.matches("[a-zA-Z0-9]*");
+                                    if(temp.charAt(j) == '.')
+                                    {
+                                        y = y + temp.charAt(j);
+                                        continue;
+                                    }
+                                    if(check == false)
+                                    {
+                                        if(x.equals(""))
+                                        {
+                                        }
+                                        else
+                                        {
+                                            check = y.chars().allMatch(Character::isLetter);
+                                            if(check == true)
+                                            {
+                                                //System.out.println("ID: "+x);
+                                                Token data = new Token(temp, 5);
+                                                x.add(data);
+                                            }
+                                            else
+                                            {
+                                                //System.out.println("NUM: "+x);
+                                                Token data = new Token(temp, 4);
+                                                x.add(data);
+                                            }
+                                            y = "";
+                                        }
+                                        //System.out.println("ERROR: "+temp.charAt(j));
+                                        System.out.println("REJECT");
+                                        System.exit(1);
+                                        continue;
+                                    }
+                                    y = y + temp.charAt(j);
+                                }
+                                if(y.equals(""))
+                                {
+                                }
+                                else
+                                {
+                                    check = y.chars().allMatch(Character::isLetter);
+                                    if(check == true)
+                                    {
+                                        //System.out.println("ID: "+x);
+                                        Token data = new Token(temp, 5);
+                                        x.add(data);
+                                    }
+                                    else
+                                    {
+                                        //System.out.println("NUM: "+x);
+                                        Token data = new Token(temp, 4);
+                                        x.add(data);
+                                    }
+                                    for(int k = 0; k<delim.length; k++)
+                                    {
+                                        String d = delim[k];
+                                        if((String.valueOf(c)).equals(d))
+                                        {
+                                            Token data = new Token(String.valueOf(c), 1);
+                                            x.add(data);
+                                        }
+                                    }
+                                }
+                            }
+                            w = "";
+                        }   
+                    }
+                }
+            }
+        }
+    }
+    static class Parser
+    {    
+        public static int index = 0;
+        public static void parser(ArrayList<Token> x)
+        {
+            Token $ = new Token("$", 7);
+            x.add($);
+            A(x);
+            System.out.println("ACCEPT");
+            System.exit(1);
+        }
+
+        public static void A(ArrayList<Token> x)
+        {
+            B(x);
+        }
+
+        public static void B(ArrayList<Token> x)
+        {
+            if(((x.get(index).getToken()).equals("$")))
+            {
+                System.out.println("ACCEPT");
+                System.exit(1);
+            }
+            else
+            {
+                C(x);
+                E(x);
+                D(x);
+            }
+        }
+
+        public static void C(ArrayList<Token> x)
+        {
+            if(!(((x.get(index).getToken()).equals("int")) || ((x.get(index).getToken()).equals("void")) || ((x.get(index).getToken()).equals("float"))))
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+            index++;
+        }
+    
+        public static void D(ArrayList<Token> x)
+        {
+            if(((x.get(index).getToken()).equals("$")))
+            {
+                System.out.println("ACCEPT");
+                System.exit(1);
+            }
+            else
+            {
+                if(((x.get(index).getToken()).equals("int")) ||((x.get(index).getToken()).equals("void")) ||((x.get(index).getToken()).equals("float")))
+                {
+                    C(x);
+                    E(x);
+                    D(x);
+                }
+            }
+        }
+
+        public static void E(ArrayList<Token> x)
+        {
+            if(((x.get(index).getToken()).equals("$")))
+            {
+                System.out.println("ACCEPT");
+                System.exit(1);
+            }
+            else
+            {
+                if((x.get(index).getType()) == 5)
+                {
+                    index++;
+                    F(x);
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+        }
+
+        public static void F(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken().equals("(")))
+            {
+                index++;
+                H(x);
+                L(x);
+            }
+            else
+            {
+                G(x);
+            }
+        }
+
+        public static void G(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken().equals("[")))
+            {
+                if((x.get(index + 1).getType()) == 4)
+                {
+                    index++;
+                    if((x.get(index + 1).getToken().equals("]")))
+                    {
+                        index++;
+                        if((x.get(index + 1).getToken().equals(";")))
+                        {
+                            index = index + 2;
+                        }
+                        else
+                        {
+                            System.out.println("REJECT");
+                            System.exit(1);
+                        }
+                    }
+                    else
+                    {
+                        System.out.println("REJECT");
+                        System.exit(1);
+                    }
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+            else if((x.get(index).getToken().equals(";")))
+            {
+                index++;
+            }
+            else
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+        }
+
+        public static void H(ArrayList<Token> x)
+        {
+            if(((x.get(index).getToken()).equals("void")))
+            {
+                if(((x.get(index + 1).getToken()).equals(")")))
+                {
+                    index = index + 2;
+                }
+            }
+            else if(((x.get(index).getToken()).equals("int")) || ((x.get(index).getToken()).equals("void")) || ((x.get(index).getToken()).equals("float")))
+            {
+                I(x);
+                J(x);
+                if((x.get(index).getToken()).equals(")"))
+                {
+                    index++;
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+        }
+    
+        public static void I(ArrayList<Token> x)
+        {
+            C(x);
+            if((x.get(index).getType()) == 5)
+            {
+                index++;
+                K(x);
+            }
+            else
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+        }
+
+        public static void J(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals(","))
+            {
+                index++;
+                I(x);
+            }
+        }
+
+        public static void K(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("["))
+            {
+                if((x.get(index + 1).getToken()).equals("]"))
+                {
+                    index = index + 2;
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+        }
+
+        public static void L(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("{"))
+            {
+                index++;
+                N(x);
+                P(x);
+                index--;
+                if((x.get(index + 1).getToken()).equals("}"))
+                {
+                    index++;
+                    if(((x.get(index).getToken()).equals("$")))
+                    {
+                        System.out.println("ACCEPT");
+                        System.exit(1);
+                    }
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+            else
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+        }
+
+        public static void N(ArrayList<Token> x)
+        {
+            if(((x.get(index).getToken()).equals("int")) || ((x.get(index).getToken()).equals("void")) || ((x.get(index).getToken()).equals("float")))
+            {
+                C(x);
+                if((x.get(index).getType() == 5))
+                {
+                    index++;
+                    G(x);
+                    N(x);
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+        }
+    
+        public static void O(ArrayList<Token> x)
+        {
+            if(((x.get(index).getType()) == 5) || ((x.get(index).getToken()).equals("(")))
+            {
+                Q(x);
+            }
+            else if((x.get(index).getToken()).equals("{"))
+            {
+                L(x);
+            }
+            else if((x.get(index).getToken()).equals("if"))
+            {
+                R(x);
+            }
+            else if((x.get(index).getToken()).equals("while"))
+            {
+                T(x);
+            }
+            else if((x.get(index).getToken()).equals("return"))
+            {
+                U(x);
+            }
+        }
+
+        public static void P(ArrayList<Token> x)
+        {
+            if(((x.get(index).getType()) == 4) || ((x.get(index).getType()) == 5) ||
+            ((x.get(index).getToken()).equals("if")) || ((x.get(index).getToken()).equals("while")) ||
+            ((x.get(index).getToken()).equals("return")) || ((x.get(index).getToken()).equals(";")) ||
+            ((x.get(index).getToken()).equals("(")) || ((x.get(index).getToken()).equals("{")))
+            {
+                O(x);
+                P(x);
+            }
+        }
+
+        public static void Q(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals(";"))
+            {
+                index++;
+            }
+            else
+            {
+                V(x);
+                if((x.get(index).getToken()).equals(";"))
+                {
+                    index++;
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+        }
+
+        public static void R(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("if"))
+            {
+                if((x.get(index + 1).getToken()).equals("("))
+                {
+                    index++;
+                    V(x);
+                    if((x.get(index - 1).getToken()).equals(")"))
+                    {
+                        S(x);
+                    }
+                    else
+                    {
+                        System.out.println("REJECT");
+                        System.exit(1);
+                    }
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+            else
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+        }
+
+        public static void S(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("else"))
+            {
+                index++;
+                O(x);
+            }
+            else
+            {
+                O(x);
+            }
+        }
+
+        public static void T(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("while"))
+            {
+                if((x.get(index + 1).getToken()).equals("("))
+                {
+                    index++;
+                    V(x);
+                    O(x);
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+            else
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+        }
+
+        public static void U(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("return"))
+            {
+                index++;
+                Q(x);
+            }
+            else
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+        }
+
+        public static void V(ArrayList<Token> x)
+        {
+            if((x.get(index).getType()) == 5)
+            {
+                index++;
+                W(x);
+            }
+            else if((x.get(index).getToken()).equals("("))
+            {
+                index++;
+                V(x);
+                if((x.get(index).getToken()).equals(")"))
+                {
+                    index++;
+                    gamma(x);
+                    beta(x);
+                    Z(x);
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+            else if((x.get(index).getType()) == 4)
+            {
+                index++;
+                gamma(x);
+                beta(x);
+                Z(x);
+            }
+            else
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+        }
+
+        public static void W(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("("))
+            {
+                index++;
+                theta(x);
+                if((x.get(index).getToken()).equals(")"))
+                {
+                    index++;
+                    gamma(x);
+                    beta(x);
+                    Z(x);
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+            else
+            {
+                Y(x);
+                X(x);
+            }
+        }
+
+        public static void X(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("="))
+            {
+                index++;
+                V(x);
+            }
+            else
+            {
+                gamma(x);
+                beta(x);
+                Z(x);
+            }
+        }
+
+        public static void Y(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("["))
+            {
+                index++;
+                V(x);
+                if((x.get(index).getToken()).equals("]"))
+                {
+                    index++;
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+        }
+
+        public static void Z(ArrayList<Token> x)
+        {
+            if(((x.get(index).getToken()).equals("<")) || ((x.get(index).getToken()).equals(">")) ||
+            ((x.get(index).getToken()).equals("<=")) || ((x.get(index).getToken()).equals(">=")) ||
+            ((x.get(index).getToken()).equals("==")) || ((x.get(index).getToken()).equals("!=")))
+            {
+                alpha(x);
+                omega(x);
+                gamma(x);
+                beta(x);
+            }
+        }
+
+        public static void alpha(ArrayList<Token> x)
+        {
+            if(!(((x.get(index).getToken()).equals("<")) || ((x.get(index).getToken()).equals(">")) ||
+            ((x.get(index).getToken()).equals("<=")) || ((x.get(index).getToken()).equals(">=")) ||
+            ((x.get(index).getToken()).equals("==")) || ((x.get(index).getToken()).equals("!="))))
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+            index++;
+        }
+
+        public static void beta(ArrayList<Token> x)
+        {
+            if(((x.get(index).getToken()).equals("+")) || ((x.get(index).getToken()).equals("-")))
+            {
+                epsilon(x);
+                omega(x);
+                gamma(x);
+                beta(x);
+            }
+        }
+
+        public static void epsilon(ArrayList<Token> x)
+        {
+            if(!(((x.get(index).getToken()).equals("+")) || ((x.get(index).getToken()).equals("-"))))
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+            index++;
+        }
+
+        public static void gamma(ArrayList<Token> x)
+        {
+            if(((x.get(index).getToken()).equals("*")) || ((x.get(index).getToken()).equals("/")))
+            {
+                lambda(x);
+                omega(x);
+                gamma(x);
+            }
+        }
+
+        public static void lambda(ArrayList<Token> x)
+        {
+            if(!(((x.get(index).getToken()).equals("*")) || ((x.get(index).getToken()).equals("/"))))
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+            index++;
+        }
+
+        public static void omega(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("("))
+            {
+                index++;
+                V(x);
+                if((x.get(index).getToken()).equals(")"))
+                {
+                    index++;
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+            else if((x.get(index).getType()) == 5)
+            {
+                index++;
+                pi(x);
+            }
+            else if((x.get(index).getType()) == 4)
+            {
+                index++;
+            }
+            else
+            {
+                System.out.println("REJECT");
+                System.exit(1);
+            }
+        }
+
+        public static void pi(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals("("))
+            {
+                index++;
+                theta(x);
+                if((x.get(index).getToken().equals(")")))
+                {
+                    index++;
+                }
+                else
+                {
+                    System.out.println("REJECT");
+                    System.exit(1);
+                }
+            }
+            else
+            {
+                Y(x);
+            }
+        }
+
+        public static void theta(ArrayList<Token> x)
+        {
+            if(((x.get(index).getType()) == 5) || ((x.get(index).getToken()).equals("(")) ||
+            ((x.get(index).getType()) == 4))
+            {
+                V(x);
+                zeta(x);
+            }
+        }
+
+        public static void zeta(ArrayList<Token> x)
+        {
+            if((x.get(index).getToken()).equals(","))
+            {
+                index++;
+                V(x);
+                zeta(x);
+            }
+        }
+    }
+    static class Token
+    {
+        String token;
+        int type;
+        public Token(String t, int ty)
+        {
+            token = t;
+            type = ty;
+        }
+      
+        public String getToken()
+        {
+            return token;
+        }
+
+        public int getType()
+        {
+            return type;
+        }
+    }
+}
